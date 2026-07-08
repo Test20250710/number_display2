@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>更新叫號 - 茂達電子捐血活動</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+        :root {
+            --primary-color: #005a9e;
+            --accent-color: #e02424;
+            --success-color: #38a169;
+            --text-color: #2d3748;
+            --background-gradient: linear-gradient(135deg, #e6f0fa 0%, #f7fafc 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            --border-radius: 16px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            min-height: 100%;
+            background: var(--background-gradient);
+            font-family: 'Noto Sans TC', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        .main-container {
+            width: 90%;
+            max-width: 420px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 28px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.4rem;
+            color: var(--primary-color);
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #718096;
+            margin-bottom: 24px;
+        }
+
+        #current-number-hint {
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--text-color);
+            margin-bottom: 20px;
+            background: rgba(229, 243, 255, 0.5);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        #current-number-hint strong { color: var(--accent-color); font-size: 1.3rem; }
+
+        input[type="text"] {
+            width: 100%;
+            font-size: 3rem;
+            text-align: center;
+            padding: 16px;
+            border: 3px solid #cbd5e0;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .quick-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .quick-buttons button {
+            flex: 1;
+            padding: 14px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            background: #edf2f7;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .quick-buttons button:active { background: #cbd5e0; }
+
+        button.submit-btn {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: white;
+            background: var(--primary-color);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        button.submit-btn:active { background: #004070; }
+
+        button.finish-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--accent-color);
+            background: white;
+            border: 2px solid var(--accent-color);
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
+        #status-message {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 1rem;
+            font-weight: 500;
+            min-height: 24px;
+        }
+
+        #status-message.success { color: var(--success-color); }
+        #status-message.error { color: var(--accent-color); }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>🩸 捐血活動叫號更新</h1>
+        <p class="subtitle">輸入目前號碼後按「更新號碼」即可</p>
+
+        <div id="current-number-hint">目前系統顯示號碼：<strong id="current-number">讀取中...</strong></div>
+
+        <input type="text" id="number-input" inputmode="numeric" placeholder="輸入號碼" autocomplete="off">
+
+        <div class="quick-buttons">
+            <button type="button" onclick="adjust(-1)">－1</button>
+            <button type="button" onclick="adjust(1)">＋1</button>
+        </div>
+
+        <button class="submit-btn" onclick="updateNumber()">更新號碼</button>
+        <button class="finish-btn" onclick="markFinished()">活動結束（顯示「圓滿結束」）</button>
+
+        <div id="status-message"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script>
+        // ↓↓↓ 請把這裡換成你自己 Firebase 專案的設定值，跟 number-display.html 裡的要一致 ↓↓↓
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "YOUR_PROJECT_ID"
+        };
+        // ↑↑↑ 請把這裡換成你自己 Firebase 專案的設定值 ↑↑↑
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const numberRef = db.ref('bloodDrive/currentNumber');
+        const timeRef = db.ref('bloodDrive/lastUpdated');
+
+        const numberInput = document.getElementById('number-input');
+        const currentNumberEl = document.getElementById('current-number');
+        const statusMessage = document.getElementById('status-message');
+
+        // 顯示目前號碼，方便福委知道現在到哪個號碼再決定要 +1 還是直接輸入
+        numberRef.on('value', (snapshot) => {
+            const val = snapshot.val();
+            currentNumberEl.textContent = (val === null || val === undefined || val === "") ? "尚未開始" : val;
+        });
+
+        function showStatus(message, isError) {
+            statusMessage.textContent = message;
+            statusMessage.className = isError ? 'error' : 'success';
+            setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+        }
+
+        function writeNumber(value) {
+            const now = new Date().toLocaleString('zh-TW', { hour12: false });
+            numberRef.set(value)
+                .then(() => {
+                    timeRef.set(now);
+                    showStatus('✅ 已更新為：' + value, false);
+                    numberInput.value = '';
+                })
+                .catch((err) => {
+                    showStatus('❌ 更新失敗，請檢查網路：' + err.message, true);
+                });
+        }
+
+        function updateNumber() {
+            const value = numberInput.value.trim();
+            if (value === '') {
+                showStatus('請先輸入號碼', true);
+                return;
+            }
+            writeNumber(value);
+        }
+
+        function adjust(delta) {
+            numberRef.get().then((snapshot) => {
+                let current = parseInt(snapshot.val(), 10);
+                if (isNaN(current)) current = 0;
+                writeNumber(current + delta);
+            });
+        }
+
+        function markFinished() {
+            if (confirm('確定要標示活動「圓滿結束」嗎？')) {
+                writeNumber('圓滿結束');
+            }
+        }
+
+        // 讓輸入框可以直接按 Enter 送出
+        numberInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') updateNumber();
+        });
+    </script>
+</body>
+</html>
