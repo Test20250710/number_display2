@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>茂達電子-捐血活動即時叫號</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+        :root {
+            --primary-color: #005a9e;
+            --accent-color: #e02424;
+            --text-color: #2d3748;
+            --background-gradient: linear-gradient(135deg, #e6f0fa 0%, #f7fafc 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            --border-radius: 16px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            background: var(--background-gradient);
+            font-family: 'Noto Sans TC', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: auto;
+        }
+
+        .main-container {
+            width: 90%;
+            max-width: 500px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 30px;
+            margin: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .main-container:hover { transform: translateY(-5px); }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(0, 90, 158, 0.1);
+        }
+
+        header svg { width: 48px; height: 48px; color: var(--primary-color); transition: transform 0.3s ease; }
+        header:hover svg { transform: scale(1.1); }
+
+        header h1 { font-size: 2rem; font-weight: 700; color: var(--primary-color); line-height: 1.2; }
+
+        .status-panel {
+            text-align: center;
+            padding: 20px 0;
+            background: rgba(229, 243, 255, 0.3);
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .status-panel h2 { font-size: 1.3rem; font-weight: 500; color: var(--text-color); margin-bottom: 15px; }
+
+        #number-display {
+            font-size: 6.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            line-height: 1;
+            transition: all 0.3s ease;
+        }
+
+        #number-display.small-text { font-size: 2.2rem; color: #4a5568; }
+
+        #connection-status {
+            font-size: 0.85rem;
+            color: #a0aec0;
+            margin-top: 6px;
+        }
+
+        #connection-status.live { color: #38a169; }
+        #connection-status.offline { color: var(--accent-color); }
+
+        .info-panel {
+            background: rgba(219, 217, 217, 0.233);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .info-panel p {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            color: var(--text-color);
+            margin: 10px 0;
+        }
+
+        .info-panel .icon { font-size: 1.2rem; }
+        .info-panel strong { font-weight: 600; color: var(--primary-color); }
+
+        footer { text-align: center; margin-top: 20px; font-size: 0.9rem; color: #718096; }
+        footer span { font-weight: 500; color: var(--text-color); }
+
+        @media (max-width: 480px) {
+            .main-container { padding: 20px; margin: 15px; }
+            header h1 { font-size: 1.6rem; }
+            #number-display { font-size: 5rem; }
+            #number-display.small-text { font-size: 1.8rem; }
+            .info-panel p { font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <header>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12.75 6a.75.75 0 00-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 000-1.5h-3.75V6z" clip-rule="evenodd" />
+            </svg>
+            <h1>茂達電子<br>捐血活動</h1>
+        </header>
+
+        <div class="status-panel">
+            <h2>目前叫號</h2>
+            <div id="number-display">讀取中...</div>
+            <div id="connection-status">連線中...</div>
+        </div>
+
+        <div class="info-panel">
+            <p><span class="icon">📅</span> <strong>日期：</strong> 114 / 07 / 24</p>
+            <p><span class="icon">⏰</span> <strong>時間：</strong> 10:00 - 16:00</p>
+            <p><span class="icon">📍</span> <strong>地點：</strong> 公司一樓大廳外</p>
+            <p><span class="icon">🦔</span> <strong>主辦：</strong> 茂達電子 福委會</p>
+        </div>
+
+        <footer>
+            <p>最後更新時間：<span id="last-updated">尚未更新</span></p>
+        </footer>
+    </div>
+
+    <!-- Firebase SDK (compat 版本，不需要 build 工具，直接可用) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script>
+        // ↓↓↓ 請把這裡換成你自己 Firebase 專案的設定值（Firebase 主控台 → 專案設定 → 你的應用程式） ↓↓↓
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "YOUR_PROJECT_ID"
+        };
+        // ↑↑↑ 請把這裡換成你自己 Firebase 專案的設定值 ↑↑↑
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const numberRef = db.ref('bloodDrive/currentNumber');
+        const timeRef = db.ref('bloodDrive/lastUpdated');
+
+        const numberDisplay = document.getElementById('number-display');
+        const lastUpdated = document.getElementById('last-updated');
+        const connectionStatus = document.getElementById('connection-status');
+
+        function updateDisplay(number) {
+            if (number === null || number === undefined || number === "") {
+                numberDisplay.textContent = '尚未開始';
+                numberDisplay.classList.add('small-text');
+                return;
+            }
+            if (!isNaN(number) && number !== "" ) {
+                // 是數字
+                numberDisplay.textContent = number;
+                numberDisplay.classList.remove('small-text');
+            } else {
+                // 是文字，例如「圓滿結束」
+                numberDisplay.textContent = number;
+                numberDisplay.classList.add('small-text');
+            }
+        }
+
+        // 即時監聽號碼變化，Firebase 一有更新就會馬上觸發，不用手動重新整理
+        numberRef.on('value', (snapshot) => {
+            updateDisplay(snapshot.val());
+        });
+
+        timeRef.on('value', (snapshot) => {
+            const t = snapshot.val();
+            lastUpdated.textContent = t ? t : '尚未更新';
+        });
+
+        // 顯示連線狀態，方便判斷是不是網路問題
+        db.ref('.info/connected').on('value', (snap) => {
+            if (snap.val() === true) {
+                connectionStatus.textContent = '● 即時連線中';
+                connectionStatus.className = 'live';
+            } else {
+                connectionStatus.textContent = '● 連線中斷，嘗試重新連線...';
+                connectionStatus.className = 'offline';
+            }
+        });
+    </script>
+</body>
+</html>
