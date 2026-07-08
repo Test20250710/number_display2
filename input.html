@@ -50,20 +50,40 @@
             text-align: center;
             font-size: 0.9rem;
             color: #718096;
-            margin-bottom: 24px;
-        }
-
-        #current-number-hint {
-            text-align: center;
-            font-size: 0.95rem;
-            color: var(--text-color);
             margin-bottom: 20px;
-            background: rgba(229, 243, 255, 0.5);
-            border-radius: 10px;
-            padding: 10px;
         }
 
-        #current-number-hint strong { color: var(--accent-color); font-size: 1.3rem; }
+        /* 目前系統顯示號碼：跟輸入框同樣份量，讓現場人員一眼看到現在到哪號 */
+        #current-number-block {
+            text-align: center;
+            background: rgba(229, 243, 255, 0.5);
+            border: 2px solid rgba(0, 90, 158, 0.15);
+            border-radius: 12px;
+            padding: 12px 10px;
+            margin-bottom: 20px;
+        }
+
+        #current-number-block .label {
+            font-size: 0.9rem;
+            color: var(--text-color);
+            margin-bottom: 4px;
+        }
+
+        #current-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            line-height: 1.1;
+        }
+
+        #current-number.small-text { font-size: 1.6rem; color: #4a5568; }
+
+        .section-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 8px;
+        }
 
         input[type="text"] {
             width: 100%;
@@ -72,7 +92,7 @@
             padding: 16px;
             border: 3px solid #cbd5e0;
             border-radius: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             font-weight: 700;
             color: var(--text-color);
         }
@@ -81,26 +101,6 @@
             outline: none;
             border-color: var(--primary-color);
         }
-
-        .quick-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
-        }
-
-        .quick-buttons button {
-            flex: 1;
-            padding: 14px;
-            font-size: 1.4rem;
-            font-weight: 700;
-            border: none;
-            border-radius: 10px;
-            background: #edf2f7;
-            color: var(--primary-color);
-            cursor: pointer;
-        }
-
-        .quick-buttons button:active { background: #cbd5e0; }
 
         button.submit-btn {
             width: 100%;
@@ -117,9 +117,77 @@
 
         button.submit-btn:active { background: #004070; }
 
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: #a0aec0;
+            font-size: 0.85rem;
+            margin: 22px 0;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .divider span { padding: 0 12px; }
+
+        .quick-section {
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 20px;
+        }
+
+        .quick-section .quick-note {
+            font-size: 0.8rem;
+            color: #718096;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .quick-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .quick-buttons button {
+            flex: 1;
+            padding: 14px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            background: #edf2f7;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .quick-buttons button:active { background: #cbd5e0; }
+
+        .other-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button.reset-btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #718096;
+            background: white;
+            border: 2px solid #cbd5e0;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
         button.finish-btn {
             width: 100%;
-            margin-top: 10px;
             padding: 14px;
             font-size: 1rem;
             font-weight: 500;
@@ -147,17 +215,29 @@
         <h1>🩸 捐血活動叫號更新</h1>
         <p class="subtitle">輸入目前號碼後按「更新號碼」即可</p>
 
-        <div id="current-number-hint">目前系統顯示號碼：<strong id="current-number">讀取中...</strong></div>
-
-        <input type="text" id="number-input" inputmode="numeric" placeholder="輸入號碼" autocomplete="off">
-
-        <div class="quick-buttons">
-            <button type="button" onclick="adjust(-1)">－1</button>
-            <button type="button" onclick="adjust(1)">＋1</button>
+        <div id="current-number-block">
+            <div class="label">目前系統顯示號碼</div>
+            <div id="current-number">讀取中...</div>
         </div>
 
+        <div class="section-label">輸入新的號碼</div>
+        <input type="text" id="number-input" inputmode="numeric" placeholder="輸入號碼" autocomplete="off">
         <button class="submit-btn" onclick="updateNumber()">更新號碼</button>
-        <button class="finish-btn" onclick="markFinished()">活動結束（顯示「圓滿結束」）</button>
+
+        <div class="divider"><span>或</span></div>
+
+        <div class="quick-section">
+            <div class="quick-note">快速微調：直接以「目前系統顯示號碼」±1，<br>不會用到上面輸入框的內容</div>
+            <div class="quick-buttons">
+                <button type="button" onclick="adjust(-1)">－1</button>
+                <button type="button" onclick="adjust(1)">＋1</button>
+            </div>
+        </div>
+
+        <div class="other-actions">
+            <button class="reset-btn" onclick="resetToInitial()">🔄 重置為初始狀態（活動尚未開始）</button>
+            <button class="finish-btn" onclick="markFinished()">🏁 活動結束（顯示「圓滿結束」）</button>
+        </div>
 
         <div id="status-message"></div>
     </div>
@@ -165,7 +245,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script>
-        // ↓↓↓ 請把這裡換成你自己 Firebase 專案的設定值，跟 number-display.html 裡的要一致 ↓↓↓
         const firebaseConfig = {
             apiKey: "AIzaSyAc9v6OEqCb1FCBPhWjOrX33-IHe0pinCs",
             authDomain: "blood-drive-2026.firebaseapp.com",
@@ -176,8 +255,6 @@
             appId: "1:45615522901:web:feef459762ba83331b20dc",
             measurementId: "G-EY6V9HJ8MG"
         };
-
-        // ↑↑↑ 請把這裡換成你自己 Firebase 專案的設定值 ↑↑↑
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -191,7 +268,13 @@
         // 顯示目前號碼，方便福委知道現在到哪個號碼再決定要 +1 還是直接輸入
         numberRef.on('value', (snapshot) => {
             const val = snapshot.val();
-            currentNumberEl.textContent = (val === null || val === undefined || val === "") ? "尚未開始" : val;
+            if (val === null || val === undefined || val === "") {
+                currentNumberEl.textContent = "活動尚未開始";
+                currentNumberEl.classList.add('small-text');
+            } else {
+                currentNumberEl.textContent = val;
+                currentNumberEl.classList.toggle('small-text', isNaN(val));
+            }
         });
 
         function showStatus(message, isError) {
@@ -200,12 +283,12 @@
             setTimeout(() => { statusMessage.textContent = ''; }, 3000);
         }
 
-        function writeNumber(value) {
+        function writeNumber(value, successMessage) {
             const now = new Date().toLocaleString('zh-TW', { hour12: false });
             numberRef.set(value)
                 .then(() => {
                     timeRef.set(now);
-                    showStatus('✅ 已更新為：' + value, false);
+                    showStatus(successMessage || ('✅ 已更新為：' + value), false);
                     numberInput.value = '';
                 })
                 .catch((err) => {
@@ -223,6 +306,8 @@
         }
 
         function adjust(delta) {
+            // 快速微調一律以資料庫目前的號碼為準，並清空輸入框，避免跟手動輸入的內容混淆
+            numberInput.value = '';
             numberRef.get().then((snapshot) => {
                 let current = parseInt(snapshot.val(), 10);
                 if (isNaN(current)) current = 0;
@@ -233,6 +318,12 @@
         function markFinished() {
             if (confirm('確定要標示活動「圓滿結束」嗎？')) {
                 writeNumber('圓滿結束');
+            }
+        }
+
+        function resetToInitial() {
+            if (confirm('確定要重置為初始狀態（活動尚未開始）嗎？')) {
+                writeNumber('', '✅ 已重置為初始狀態');
             }
         }
 
