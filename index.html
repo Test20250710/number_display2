@@ -148,7 +148,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script>
-        // ↓↓↓ 請把這裡換成你自己 Firebase 專案的設定值（Firebase 主控台 → 專案設定 → 你的應用程式） ↓↓↓
         const firebaseConfig = {
             apiKey: "AIzaSyAc9v6OEqCb1FCBPhWjOrX33-IHe0pinCs",
             authDomain: "blood-drive-2026.firebaseapp.com",
@@ -159,8 +158,6 @@
             appId: "1:45615522901:web:feef459762ba83331b20dc",
             measurementId: "G-EY6V9HJ8MG"
         };
-
-        // ↑↑↑ 請把這裡換成你自己 Firebase 專案的設定值 ↑↑↑
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -173,7 +170,7 @@
 
         function updateDisplay(number) {
             if (number === null || number === undefined || number === "") {
-                numberDisplay.textContent = '尚未開始';
+                numberDisplay.textContent = '活動尚未開始';
                 numberDisplay.classList.add('small-text');
                 return;
             }
