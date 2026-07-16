@@ -144,37 +144,34 @@
         </footer>
     </div>
 
-    <!-- Firebase SDK (compat 版本，不需要 build 工具，直接可用) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAc9v6OEqCb1FCBPhWjOrX33-IHe0pinCs",
-            authDomain: "blood-drive-2026.firebaseapp.com",
-            databaseURL: "https://blood-drive-2026-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "blood-drive-2026",
-            storageBucket: "blood-drive-2026.firebasestorage.app",
-            messagingSenderId: "45615522901",
-            appId: "1:45615522901:web:feef459762ba83331b20dc",
-            measurementId: "G-EY6V9HJ8MG"
-        };
+        // ==============================================================
+        // 輪詢版：改用 REST API 定時抓取，取代原本的持續監聽（onValue）。
+        // 好處：每次都是「問一次、拿到資料、斷開」，不會長時間佔用
+        // Firebase Realtime Database 的「同時連線數」名額，300人同時開著
+        // 也不會撞到 Spark 免費方案 100 個同時連線的上限。
+        // 代價：不是真正的「即時推送」，號碼變動後最多等 POLL_INTERVAL_MS
+        // 這麼久才會反映到畫面上（目前設定 5 秒）。
+        // ==============================================================
 
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const numberRef = db.ref('bloodDrive/currentNumber');
-        const timeRef = db.ref('bloodDrive/lastUpdated');
+        // 請確認這裡的網址跟你 Firebase 專案的 databaseURL 一致
+        const DATABASE_URL = "https://blood-drive-2026-default-rtdb.asia-southeast1.firebasedatabase.app";
+        const DATA_PATH = "bloodDrive.json"; // 一次抓 currentNumber + lastUpdated，省流量
+        const POLL_INTERVAL_MS = 5000; // 輪詢間隔：5 秒。可依需求調整，建議不要低於 3 秒
 
         const numberDisplay = document.getElementById('number-display');
         const lastUpdated = document.getElementById('last-updated');
         const connectionStatus = document.getElementById('connection-status');
 
-        function updateDisplay(number) {
+        let lastKnownNumber = undefined;
+
+        function updateNumberDisplay(number) {
             if (number === null || number === undefined || number === "") {
                 numberDisplay.textContent = '活動尚未開始';
                 numberDisplay.classList.add('small-text');
                 return;
             }
-            if (!isNaN(number) && number !== "" ) {
+            if (!isNaN(number) && number !== "") {
                 // 是數字
                 numberDisplay.textContent = number;
                 numberDisplay.classList.remove('small-text');
@@ -185,26 +182,41 @@
             }
         }
 
-        // 即時監聽號碼變化，Firebase 一有更新就會馬上觸發，不用手動重新整理
-        numberRef.on('value', (snapshot) => {
-            updateDisplay(snapshot.val());
-        });
+        function fetchLatestData() {
+            const url = `${DATABASE_URL}/${DATA_PATH}?_=${Date.now()}`; // 加時間戳避免瀏覽器快取
 
-        timeRef.on('value', (snapshot) => {
-            const t = snapshot.val();
-            lastUpdated.textContent = t ? t : '尚未更新';
-        });
+            fetch(url, { cache: 'no-store' })
+                .then(response => {
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    const newNumber = data ? data.currentNumber : null;
+                    const newTime = data ? data.lastUpdated : null;
 
-        // 顯示連線狀態，方便判斷是不是網路問題
-        db.ref('.info/connected').on('value', (snap) => {
-            if (snap.val() === true) {
-                connectionStatus.textContent = '● 即時連線中';
-                connectionStatus.className = 'live';
-            } else {
-                connectionStatus.textContent = '● 連線中斷，嘗試重新連線...';
-                connectionStatus.className = 'offline';
-            }
-        });
+                    if (newNumber !== lastKnownNumber) {
+                        updateNumberDisplay(newNumber);
+                        lastKnownNumber = newNumber;
+                    } else if (lastKnownNumber === undefined) {
+                        // 第一次讀取，即使沒有變化也要顯示
+                        updateNumberDisplay(newNumber);
+                        lastKnownNumber = newNumber;
+                    }
+
+                    lastUpdated.textContent = newTime || '尚未更新';
+
+                    connectionStatus.textContent = '● 資料同步中（每 ' + (POLL_INTERVAL_MS / 1000) + ' 秒更新一次）';
+                    connectionStatus.className = 'live';
+                })
+                .catch(error => {
+                    console.error('讀取號碼失敗:', error);
+                    connectionStatus.textContent = '● 網路連線異常，正在重試...';
+                    connectionStatus.className = 'offline';
+                });
+        }
+
+        fetchLatestData();
+        setInterval(fetchLatestData, POLL_INTERVAL_MS);
     </script>
 </body>
 </html>
