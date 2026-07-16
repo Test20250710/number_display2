@@ -220,8 +220,8 @@
             <div id="current-number">讀取中...</div>
         </div>
 
-        <div class="section-label">輸入新的號碼</div>
-        <input type="text" id="number-input" inputmode="numeric" placeholder="輸入號碼" autocomplete="off">
+        <div class="section-label">輸入新的號碼（0-300 的整數）</div>
+        <input type="text" id="number-input" inputmode="numeric" placeholder="輸入號碼" autocomplete="off" maxlength="3">
         <button class="submit-btn" onclick="updateNumber()">更新號碼</button>
 
         <div class="divider"><span>或</span></div>
@@ -265,6 +265,18 @@
         const currentNumberEl = document.getElementById('current-number');
         const statusMessage = document.getElementById('status-message');
 
+        const MIN_NUMBER = 0;
+        const MAX_NUMBER = 300; // 活動預估總人數上限，需要調整時改這裡就好
+
+        // 驗證輸入是否為 0-300 之間的整數（不接受小數點、負號、文字）
+        // 回傳 null 代表驗證失敗
+        function validateAndParseNumber(rawValue) {
+            if (!/^\d+$/.test(rawValue)) return null; // 只能是純數字（無小數點、無負號）
+            const n = parseInt(rawValue, 10);
+            if (n < MIN_NUMBER || n > MAX_NUMBER) return null;
+            return n;
+        }
+
         // 顯示目前號碼，方便福委知道現在到哪個號碼再決定要 +1 還是直接輸入
         numberRef.on('value', (snapshot) => {
             const val = snapshot.val();
@@ -302,7 +314,12 @@
                 showStatus('請先輸入號碼', true);
                 return;
             }
-            writeNumber(value);
+            const n = validateAndParseNumber(value);
+            if (n === null) {
+                showStatus(`請輸入 0-${MAX_NUMBER} 之間的整數（不可有小數點或負號）`, true);
+                return;
+            }
+            writeNumber(n);
         }
 
         function adjust(delta) {
@@ -311,7 +328,20 @@
             numberRef.get().then((snapshot) => {
                 let current = parseInt(snapshot.val(), 10);
                 if (isNaN(current)) current = 0;
-                writeNumber(current + delta);
+
+                let next = current + delta;
+                if (next < MIN_NUMBER) next = MIN_NUMBER;
+                if (next > MAX_NUMBER) next = MAX_NUMBER;
+
+                if (next === current) {
+                    showStatus(
+                        next === MIN_NUMBER ? '已經是最小值 0，無法再減少' : `已經是上限 ${MAX_NUMBER}，無法再增加`,
+                        true
+                    );
+                    return;
+                }
+
+                writeNumber(next);
             });
         }
 
@@ -330,6 +360,12 @@
         // 讓輸入框可以直接按 Enter 送出
         numberInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') updateNumber();
+        });
+
+        // 即時過濾：輸入當下就把非數字字元（小數點、負號、文字等）濾掉，
+        // 避免使用者打到一半才發現不能送出
+        numberInput.addEventListener('input', () => {
+            numberInput.value = numberInput.value.replace(/[^\d]/g, '');
         });
     </script>
 </body>
